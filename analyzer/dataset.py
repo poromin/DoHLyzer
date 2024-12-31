@@ -5,15 +5,13 @@ import os
 import pickle
 
 import ijson
-import numpy
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 import analyzer.utils as utils
 
-
 def create_segments(clumps_list, segment_size):
     clumps_list2 = []
-    # Inter-arrival, Duration, Size, Packets, Direction
     for c in clumps_list:
         c2 = [
             utils.normalize(math.log10(max(1e-12, c[0])), data_min=-12, data_max=-2),
@@ -29,48 +27,46 @@ def create_segments(clumps_list, segment_size):
 
     return utils.nwise(clumps_list2, segment_size)
 
+def load_json(file_path, label, segment_size, shuffle=True, max_count=0):
+    logging.info(f"Loading {file_path}.")
+    with (gzip.open(file_path, 'r') if file_path.endswith('gz') else open(file_path, 'r')) as json_file:
+        items = ijson.items(json_file, 'item')
+        segments = []
 
-def load_json(path, label, segment_size, shuffle=True, max_count=0):
-    logging.info('Loading {} .'.format(path))
-    if path.endswith('gz'):
-        json_file = gzip.open(path, 'r')
-    else:
-        json_file = open(path, 'r')
-    logging.info('Loading {} ..'.format(path))
-
-    items = ijson.items(json_file, 'item')
-
-    segments = []
-
-    for flow in items:
-        if 0 < max_count < len(segments):
-            break
-        segments.extend(create_segments(flow, segment_size))
-
-    logging.info('Loading {} ...'.format(path))
+        for flow in items:
+            if 0 < max_count < len(segments):
+                break
+            segments.extend(create_segments(flow, segment_size))
 
     if shuffle:
-        numpy.random.shuffle(segments)
+        np.random.shuffle(segments)
 
-    return numpy.array(segments), numpy.full(len(segments), label)
-
+    return np.array(segments), np.full(len(segments), label)
 
 def load_dataset(dir_path, segment_size, use_cache=True):
-    cache_path = os.path.join(dir_path, 'cache-{}'.format(segment_size))
+    cache_path = os.path.join(dir_path, f'cache-{segment_size}')
     if use_cache and os.path.exists(cache_path):
-        print('Using cached version')
+        logging.info("Using cached dataset.")
         return pickle.load(open(cache_path, 'rb'))
 
-    doh_dataset = load_json(os.path.join(dir_path, 'doh.json.gz'), 1, segment_size)
-    ndoh_dataset = load_json(os.path.join(dir_path, 'ndoh.json.gz'), 0, segment_size, max_count=len(doh_dataset[0]))
+    doh_file = os.path.join(dir_path, 'doh.json.gz')
+    ndoh_file = os.path.join(dir_path, 'ndoh.json.gz')
 
-    logging.info('Combining datasets')
+    if not (os.path.exists(doh_file) and os.path.exists(ndoh_file)):
+        raise FileNotFoundError("Required files 'doh.json.gz' or 'ndoh.json.gz' are missing in the directory.")
+
+    logging.info("Loading datasets.")
+    doh_dataset = load_json(doh_file, 1, segment_size)
+    ndoh_dataset = load_json(ndoh_file, 0, segment_size, max_count=len(doh_dataset[0]))
+
+    logging.info("Combining datasets.")
     main_dataset = utils.combine(doh_dataset, ndoh_dataset)
 
-    logging.info('Splitting test/train')
+    logging.info("Splitting dataset into training and testing sets.")
     dataset_tuple = train_test_split(*main_dataset)
 
     if use_cache:
+        logging.info("Caching the dataset.")
         pickle.dump(dataset_tuple, open(cache_path, 'wb'))
 
     return dataset_tuple
