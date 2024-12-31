@@ -44,11 +44,11 @@ if __name__ == '__main__':
 
     results = []
 
-    for segment_size in range(4, 11):
+    for segment_size in range(8, 9):
 
         x_train, x_test, y_train, y_test = dataset.load_dataset(args.input, segment_size, use_cache=False)
 
-        for model_idx in range(1, 5):
+        for model_idx in range(1, 4):
             for _ in range(3):
                 results.append((run_model(model_idx, segment_size), model_idx, segment_size))
 
