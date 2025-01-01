@@ -6,6 +6,6 @@ def create_model(version, segment_size):
     elif version in [3, 4]:
         print("Classification of Benign DoH vs Malicious DoH.")
     else:
-        print("Invalid model version.")
+        print(f'Trying to open models v{version}.py')
     module = importlib.import_module(f'analyzer.models.v{version}')
     return module.create_model(segment_size)
