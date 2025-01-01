@@ -6,7 +6,7 @@ import logging
 from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow.keras.callbacks import EarlyStopping
 
-import analyzer.dataset as dataset
+import analyzer.dataset_layer1 as dataset_layer1
 from analyzer.models import create_model
 
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     for segment_size in range(8, 9):
 
-        x_train, x_test, y_train, y_test = dataset.load_dataset(args.input, segment_size, use_cache=False)
+        x_train, x_test, y_train, y_test = dataset_layer1.load_dataset(args.input, segment_size, use_cache=False)
 
         for model_idx in range(1, 3):
             for _ in range(3):
