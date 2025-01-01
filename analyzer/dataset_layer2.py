@@ -49,11 +49,11 @@ def load_dataset(dir_path, segment_size, use_cache=True):
         logging.info("Using cached dataset.")
         return pickle.load(open(cache_path, 'rb'))
 
-    doh_file = os.path.join(dir_path, 'doh.json.gz')
-    ndoh_file = os.path.join(dir_path, 'ndoh.json.gz')
+    doh_file = os.path.join(dir_path, 'mal-doh.json.gz')
+    ndoh_file = os.path.join(dir_path, 'benign-doh.json.gz')
 
     if not (os.path.exists(doh_file) and os.path.exists(ndoh_file)):
-        raise FileNotFoundError("Required files 'doh.json.gz' or 'ndoh.json.gz' are missing in the directory.")
+        raise FileNotFoundError("Required files 'mal-doh.json.gz' or 'benign-doh.json.gz' are missing in the directory.")
 
     logging.info("Loading datasets.")
     doh_dataset = load_json(doh_file, 1, segment_size)
